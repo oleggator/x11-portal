@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Version=0.0.1
+Name=x11-portal
+Exec=x11-portal
+Terminal=false
