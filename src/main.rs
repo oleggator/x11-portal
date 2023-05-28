@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     proxy
         .select_sources(
             &session,
-            CursorMode::Metadata,
+            CursorMode::Embedded,
             SourceType::Monitor | SourceType::Window,
             true,
             None,
