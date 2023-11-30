@@ -10,3 +10,4 @@ ashpd = { version = "0.4", features = ["tokio", "pipewire"], default-features = 
 gst =  {package="gstreamer", version="0.20"}
 gst-video = { package = "gstreamer-video", version="0.20" }
 tokio = { version = "1", features = ["full"] }
+futures = "0.3"

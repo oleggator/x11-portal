@@ -3,11 +3,8 @@ use ashpd::{
     WindowIdentifier,
 };
 
-use std::process::Command;
-
+use futures::StreamExt;
 use gst::prelude::*;
-
-//  gst-launch-1.0 -v videotestsrc pattern=snow ! autovideosink
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -42,23 +39,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let fd = proxy.open_pipe_wire_remote(&session).await?;
     println!("fd: {}", fd);
 
-    let output = Command::new("gst-launch-1.0")
-        .arg("-v")
-        .arg("pipewiresrc")
-        .arg(format!("fd={}", fd))
-        .arg(format!("path={}", node))
-        // .arg("do-timestamp=true")
-        // .arg("keepalive-time=1000")
-        // .arg("resend-last=true")
-        .arg("!")
-        .arg("videoconvert")
-        // .arg("!").arg("queue")
-        .arg("!")
-        .arg("xvimagesink")
-        .arg("synchronous=false")
-        .output()?;
-    print!("{}", String::from_utf8(output.stdout)?);
-    eprint!("{}", String::from_utf8(output.stderr)?);
+    gst::init()?;
+
+    let desc = [
+        format!("pipewiresrc fd={fd} path={node}"),
+        format!("videoconvert"),
+        format!("xvimagesink synchronous=false"),
+    ]
+    .join(" ! ");
+    let pipeline: gst::Pipeline = gst::parse_launch(&desc)?.downcast().unwrap();
+
+    pipeline
+        .set_state(gst::State::Playing)
+        .expect("Unable to set the pipeline to the `Playing` state");
+
+    let bus = pipeline.bus().unwrap();
+
+    while let Some(msg) = bus.stream().next().await {
+        use gst::MessageView;
+
+        match msg.view() {
+            MessageView::Eos(..) => {
+                println!("received eos");
+                break;
+            }
+            MessageView::Error(err) => {
+                println!(
+                    "Error from {:?}: {} ({:?})",
+                    err.src().map(|s| s.path_string()),
+                    err.error(),
+                    err.debug()
+                );
+                break;
+            }
+            _ => (),
+        };
+    }
+
+    pipeline
+        .set_state(gst::State::Null)
+        .expect("Unable to set the pipeline to the `Null` state");
 
     Ok(())
 }
