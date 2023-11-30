@@ -9,19 +9,25 @@ use gst::prelude::*;
 
 //  gst-launch-1.0 -v videotestsrc pattern=snow ! autovideosink
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let proxy = Screencast::new().await?;
     let session = proxy.create_session().await?;
+
+    let multiple = false;
+    let restore_token = None;
+    let cursor_mode = CursorMode::Embedded;
+    let source_type = SourceType::Monitor | SourceType::Window;
+    let persist_mode = PersistMode::DoNot;
+
     proxy
         .select_sources(
             &session,
-            CursorMode::Embedded,
-            SourceType::Monitor | SourceType::Window,
-            true,
-            None,
-            PersistMode::DoNot,
+            cursor_mode,
+            source_type,
+            multiple,
+            restore_token,
+            persist_mode,
         )
         .await?;
 
@@ -39,23 +45,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let output = Command::new("gst-launch-1.0")
         .arg("-v")
         .arg("pipewiresrc")
-            .arg(format!("fd={}", fd))
-            .arg(format!("path={}", node))
-            .arg("do-timestamp=true")
-            .arg("keepalive-time=1000")
-            .arg("resend-last=true")
-            // .arg("always-copy=true")
-        .arg("!").arg("videoconvert")
-        .arg("!").arg("queue")
-        // .arg("!").arg("video/x-raw,framerate=25/1")
-        // .arg("!").arg("video/x-raw,framerate=30/1")
-        // .arg("!").arg("queue0.")
-        .arg("!").arg("ximagesink").arg("sync=0")
-        // .arg("!").arg("autovideosink")
-        // .arg("!").arg("xvimagesink")
-        // .arg("!").arg("waylandsink")
-        .output()?
-    ;
+        .arg(format!("fd={}", fd))
+        .arg(format!("path={}", node))
+        // .arg("do-timestamp=true")
+        // .arg("keepalive-time=1000")
+        // .arg("resend-last=true")
+        .arg("!")
+        .arg("videoconvert")
+        // .arg("!").arg("queue")
+        .arg("!")
+        .arg("xvimagesink")
+        .arg("synchronous=false")
+        .output()?;
     print!("{}", String::from_utf8(output.stdout)?);
     eprint!("{}", String::from_utf8(output.stderr)?);
 
