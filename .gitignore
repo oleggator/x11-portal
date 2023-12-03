@@ -1,1 +1,6 @@
 /target
+/pkg
+.idea
+.vscode
+*.tar.gz
+*.zst
