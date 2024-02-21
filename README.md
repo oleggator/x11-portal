@@ -3,7 +3,7 @@
 ## Requirements
 - pipewire
 - xdg-desktop-portal
-- gstreamer
+- gstreamer1-devel
 - gst-plugin-pipewire
 - dbus
 - glib2-devel
