@@ -6,3 +6,4 @@
 - gstreamer
 - gst-plugin-pipewire
 - dbus
+- glib2-devel
